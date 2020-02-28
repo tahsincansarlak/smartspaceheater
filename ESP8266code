@@ -1,0 +1,78 @@
+// Tahsin Can Sarlak
+// Smart Space Heater
+
+#define BLYNK_PRINT Serial // Starts the serial writing
+
+// Necessary libraries to connect to WIFI, the sensor and the servo
+#include <ESP8266WiFi.h> 
+#include <BlynkSimpleEsp8266.h>
+#include <SimpleDHT.h>
+#include <Servo.h>
+
+// Auth Token in the Blynk App.
+char auth[] = "My Auth";
+
+// WiFi credentials.
+char ssid[] = "My Wifi";
+char pass[] = "My Wifi password";
+
+int pinDHT11 = 16; // D0 pin for the sensor
+int desired = 0; // The desired temperature
+
+int temp; // The read temperature
+
+// Necessary initializations for the sensor, the motor and the timer
+Servo myservo;
+BlynkTimer timer;
+SimpleDHT11 dht11;
+
+// This function is called each timer time defined on the setup
+void myTimerEvent()
+{
+  // Initiliazes the humidity and temperature sensor data
+  byte temperature = 0;
+  byte humidity = 0;
+  byte data[40] = {0};
+
+  // Reads the humidity and temperature sensor
+  if (dht11.read(pinDHT11, &temperature, &humidity, data)) {
+    return;
+  }
+  
+  Blynk.virtualWrite(V0, (int)temperature); // Updates V0 element on the Blynk App
+
+  temp = temperature; // Assigns the read value to a global variable
+}
+
+void setup()
+{
+  // Debug console
+  Serial.begin(9600);
+
+  Blynk.begin(auth, ssid, pass); // Connects to the BLYNK
+
+  myservo.attach(5); // Connects to the servo on D1
+
+  timer.setInterval(1000L, myTimerEvent); // Calls myTimerEvent in each second
+}
+
+void loop()
+{
+  Blynk.run(); // Runs the funtions related with BLYNK
+  timer.run(); // Runs the timer functions
+}
+
+// Reads V1
+BLYNK_WRITE(V1){
+  int desired = param.asInt(); // Reads the value on the V!
+
+  // Logic that compares the desired value with the read value and 
+  // updates the position of the motor according to that
+  if (desired > temp){
+    myservo.write(120);
+  }
+  else {
+    myservo.write(20);
+  }
+}
+ 
